@@ -1,32 +1,62 @@
-import axios from "axios"
-import { useState } from "react"
+import axios from "axios";
+import { useState, useEffect } from "react";
+
+function List() {
+    const [posts, setPosts] = useState([]);
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const response = await axios.get("http://localhost:8000/posts");
+                setPosts(response.data);
+            } catch (error) {
+                console.error("Error fetching posts:", error);
+            }
+        };
+        fetchPosts();
+    }, []);
+
+    return (
+        <ul>
+            {posts.map((post, index) => (
+                <li key={index}>{post.title} {post.content}</li>
+            ))}
+        </ul>
+    );
+}
 
 export default function Home() {
-    const [title, setTitle] = useState("")
-    const [content, setContent] = useState("")
-    const submit = (event) => {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [refresh, setRefresh] = useState(false);
+
+    const submit = async (event) => {
+        event.preventDefault();
         try {
-            axios.post("http:://localhost:4000/", {
-            title: title,
-            content: content,
-            });
-        } catch(error) {
-            console.error("Error : ", error);
+            await axios.post("http://127.0.0.1:8000/posts", { title, content });
+            setTitle("");
+            setContent("");
+            setRefresh(prev => !prev);
+        } catch (error) {
+            console.error("Error posting data:", error);
         }
     };
 
     return (
-        <body>
+        <div>
             <h1>Test</h1>
-            <label>
-                Titre :
-                <input required="text" name="title" value="" onChange={e => setTitle(e.target.value)} />
-            </label>
-            <label>
-                Content :
-                <input required="text" name="content" value="" onChange={e => setContent(e.target.value)} />
-            </label>
-            <button name="button" onClick={submit}>Submit</button>
-        </body>
-    )
+            <List key={refresh} />
+            <form onSubmit={submit}>
+                <label>
+                    Titre :
+                    <input type="text" name="title" value={title} onChange={e => setTitle(e.target.value)} required />
+                </label>
+                <label>
+                    Contenu :
+                    <input type="text" name="content" value={content} onChange={e => setContent(e.target.value)} required />
+                </label>
+                <button type="submit" onClick={submit}>Submit</button>
+            </form>
+        </div>
+    );
 }
